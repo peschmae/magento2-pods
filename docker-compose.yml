@@ -1,0 +1,28 @@
+---
+version: '2'
+
+services:
+  nginx:
+    image: dcs/nginx:latest
+    ports:
+      - "8080:8080"
+    networks:
+      - dcs-network
+    depends_on:
+      - php-fpm
+      - redis
+  php-fpm:
+    image: dcs/php-fpm:latest
+    depends_on:
+      - redis
+    networks:
+      - dcs-network
+  redis:
+    image: redis:3.2
+    networks:
+      - dcs-network
+
+
+networks:
+  dcs-network:
+    driver: bridge

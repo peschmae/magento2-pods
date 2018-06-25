@@ -1,0 +1,106 @@
+# The following code is for creating single-instance of magento2 Deployment and Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: magento2
+  labels:
+    app: magento2
+spec:
+  ports:
+    - port: 443
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    app: magento2
+    tier: frontend
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app: phpinfo
+  name: phpinfo
+  namespace: myproject
+spec:
+  host: phpinfo.minishift.local
+  to:
+    kind: Service
+    name: phpinfo
+    weight: 100
+  wildcardPolicy: None
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: magento-pass
+type: Opaque
+data:
+  admin-password: aDNsbDAtdW4xYw==
+---
+#This it to deploy magento2 container to Kubernetes
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: magento2
+  labels:
+    app: magento2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: magento2
+      tier: frontend
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: magento2
+        tier: frontend
+    spec:
+      containers:
+      - image: alexcheng/magento2  #https://hub.docker.com/r/alexcheng/magento2/
+        name: magento2
+        env:
+        - name: MYSQL_HOST
+          value: mysql
+        - name: MYSQL_DATABASE
+          value: magento
+        - name: MYSQL_USER
+          value: magento
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: magento-password
+        - name: MAGENTO_LANGUAGE
+          value: en_GB
+        - name: MAGENTO_DEFAULT_CURRENCY
+          value: CHF
+        - name: MAGENTO_TIMEZONE
+          value: Europe/Amsterdam
+        - name: MAGENTO_URL
+          value: https://magento-test.unckc.kube24.net
+        - name: MAGENTO_BACKEND_FRONTNAME
+          value: admin
+        - name: MAGENTO_USE_SECURE
+          value: "1"
+        - name: MAGENTO_BASE_URL_SECURE
+          value: "https://magento-test.unckc.kube24.net"
+        - name: MAGENTO_USE_SECURE_ADMIN
+          value: "0"
+        - name: MAGENTO_ADMIN_FIRSTNAME
+          value: admin
+        - name: MAGENTO_ADMIN_LASTNAME
+          value: kubernetes
+        - name: MAGENTO_ADMIN_EMAIL
+          value: bla@bla.bla
+        - name: MAGENTO_ADMIN_USERNAME
+          value: admin
+        - name: MAGENTO_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: magento-pass
+              key: admin-password
+        ports:
+        - containerPort: 8080
+          name: magento2
