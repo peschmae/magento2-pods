@@ -30,5 +30,6 @@ RUN mkdir -p /var/www/magento2 && \
 USER www-data
 
 COPY ./index.php /var/www/magento2/pub/
+COPY ./mysql-test.php /var/www/magento2/pub/
 COPY ./session-test.php /var/www/magento2/pub/
 COPY ./magento-composer.jpg /var/www/magento2/pub/
